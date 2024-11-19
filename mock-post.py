@@ -3,7 +3,7 @@ import random
 import time
 
 # URL of the Flask endpoint
-POST_URL = "https://sensor-4buw28f83-rbapuji1s-projects.vercel.app/post"
+POST_URL = "https://sensor-app-nine.vercel.app/post"
 
 # Function to generate random sensor data
 def generate_sensor_data():
