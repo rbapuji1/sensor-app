@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import os
 import time
 import json
+from flask_cors import CORS
 
 load_dotenv()
 
@@ -15,6 +16,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL_UNPOOLED", "post
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
+CORS(app)
 
 # Define the database table
 class DataPoint(db.Model):

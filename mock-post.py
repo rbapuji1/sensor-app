@@ -3,7 +3,7 @@ import random
 import time
 
 # URL of the Flask endpoint
-POST_URL = "http://127.0.0.1:5000/post"
+POST_URL = "https://sensor-4buw28f83-rbapuji1s-projects.vercel.app/post"
 
 # Function to generate random sensor data
 def generate_sensor_data():
@@ -20,16 +20,21 @@ def main():
             data = generate_sensor_data()
             
             # Post data to the server
-            response = requests.post(POST_URL, json=data)
+            try:
+                response = requests.post(POST_URL, json=data, headers={"Content-Type": "application/json"})
+                
+                # Check response
+                if response.status_code == 200:
+                    print(f"Successfully posted data: {data}")
+                else:
+                    print(f"Failed to post data: {response.status_code}")
             
-            # Check response
-            if response.status_code == 200:
-                print(f"Successfully posted data: {data}")
-            else:
-                print(f"Failed to post data: {response.status_code} - {response.text}")
+            except requests.exceptions.RequestException as e:
+                print(f"Error posting data: {e}")
             
             # Wait 1 second before sending the next request
             time.sleep(1)
+    
     except KeyboardInterrupt:
         print("\nStopped posting data.")
 
