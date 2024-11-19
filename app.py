@@ -1,9 +1,8 @@
-from flask import Flask, request, jsonify, render_template, Response
+from flask import Flask, request, jsonify, render_template
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from dotenv import load_dotenv
 import os
-import time
 import json
 from flask_cors import CORS
 
@@ -12,7 +11,7 @@ load_dotenv()
 app = Flask(__name__)
 
 # Set up the database
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL_UNPOOLED", "postgresql://user:password@localhost/dbname")
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL", "postgresql://user:password@localhost/dbname")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -47,42 +46,25 @@ def post_data():
     db.session.commit()
     return jsonify({"message": "Data saved successfully!"}), 200
 
-@app.route('/chart-data')
+# GET endpoint to fetch chart data (all historical data)
+@app.route('/chart-data', methods=["GET"])
 def chart_data():
-    def event_stream():
-        last_id = 0  # Starting point
-        # Fetch all historical data immediately
-        with app.app_context():  # Ensure the database query is within the app context
-            all_data = DataPoint.query.order_by(DataPoint.id).all()  # Get all data from the database
-            for data in all_data:
-                data_dict = {
-                    "id": data.id,
-                    "timestamp": data.timestamp.isoformat(),
-                    "sensor1": data.sensor1,
-                    "sensor2": data.sensor2
-                }
-                yield f"data: {json.dumps(data_dict)}\n\n"  # Send all historical data
-        
-        # Now start listening for new data incrementally
-        while True:
-            with app.app_context():  # Ensure the database query is within the app context
-                # Fetch the latest data that is greater than the last_id
-                new_data = DataPoint.query.filter(DataPoint.id > last_id).order_by(DataPoint.id).limit(1).all()
-                if new_data:
-                    data = new_data[0]
-                    last_id = data.id  # Update the last seen ID
-                    data_dict = {
-                        "id": data.id,
-                        "timestamp": data.timestamp.isoformat(),
-                        "sensor1": data.sensor1,
-                        "sensor2": data.sensor2
-                    }
-                    yield f"data: {json.dumps(data_dict)}\n\n"
-            time.sleep(1)  # Delay to simulate real-time updates (adjust as needed)
+    # Fetch all data from the database
+    all_data = DataPoint.query.order_by(DataPoint.id).all()  # Get all data from the database
     
-    return Response(event_stream(), content_type='text/event-stream')
-
-
+    # Convert the data into a list of dictionaries
+    data_list = [
+        {
+            "id": data.id,
+            "timestamp": data.timestamp.isoformat(),
+            "sensor1": data.sensor1,
+            "sensor2": data.sensor2
+        }
+        for data in all_data
+    ]
+    
+    # Return the data as a JSON response
+    return jsonify(data_list)
 
 if __name__ == "__main__":
     app.run(debug=True, threaded=True)

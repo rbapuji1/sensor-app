@@ -38,20 +38,20 @@
         const config = {
             type: 'line',
             data: {
-                labels: Array(30).fill("0000-00-00 00:00:00"),
+                labels: [],
                 datasets: [
                     {
                         label: "Sensor 1",
                         backgroundColor: 'rgb(255, 99, 132)',
                         borderColor: 'rgb(255, 99, 132)',
-                        data: Array(30).fill(null),
+                        data: [],
                         fill: false,
                     },
                     {
                         label: "Sensor 2",
                         backgroundColor: 'rgb(54, 162, 235)',
                         borderColor: 'rgb(54, 162, 235)',
-                        data: Array(30).fill(null),
+                        data: [],
                         fill: false,
                     },
                 ],
@@ -91,20 +91,17 @@
 
         const context = document.getElementById('canvas').getContext('2d');
         const lineChart = new Chart(context, config);
-        const source = new EventSource("/chart-data");
 
-        source.onmessage = function (event) {
-            const data = JSON.parse(event.data);
-            if (config.data.labels.length === 30) {
-                config.data.labels.shift();
-                config.data.datasets[0].data.shift();
-                config.data.datasets[1].data.shift();
-            }
-            config.data.labels.push(data.timestamp);
-            config.data.datasets[0].data.push(data.sensor1);
-            config.data.datasets[1].data.push(data.sensor2);
-            lineChart.update();
-        }
+        // Fetch all chart data from the GET /chart-data endpoint
+        $.get("/chart-data", function (data) {
+            // Process the data and populate the chart
+            data.forEach(item => {
+                config.data.labels.push(item.timestamp);  // Add the timestamp to the labels
+                config.data.datasets[0].data.push(item.sensor1);  // Add sensor1 data
+                config.data.datasets[1].data.push(item.sensor2);  // Add sensor2 data
+            });
+            lineChart.update();  // Update the chart with the fetched data
+        });
     });
 </script>
 </body>
