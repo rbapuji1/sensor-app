@@ -38,20 +38,20 @@
         const config = {
             type: 'line',
             data: {
-                labels: Array(30).fill("0000-00-00 00:00:00"),
+                labels: [],  // Will be filled with data dynamically
                 datasets: [
                     {
                         label: "Sensor 1",
                         backgroundColor: 'rgb(255, 99, 132)',
                         borderColor: 'rgb(255, 99, 132)',
-                        data: Array(30).fill(null),
+                        data: [],  // Will be filled with data dynamically
                         fill: false,
                     },
                     {
                         label: "Sensor 2",
                         backgroundColor: 'rgb(54, 162, 235)',
                         borderColor: 'rgb(54, 162, 235)',
-                        data: Array(30).fill(null),
+                        data: [],  // Will be filled with data dynamically
                         fill: false,
                     },
                 ],
@@ -92,13 +92,33 @@
         const context = document.getElementById('canvas').getContext('2d');
         const lineChart = new Chart(context, config);
 
+        // Function to fetch and populate the chart with the latest 50 points
+        function fetchInitialData() {
+            $.get("/chart-data", function (data) {
+                // data should be an array of objects with {timestamp, sensor1, sensor2}
+                // Populate the chart with the latest data
+                data.forEach(function (entry) {
+                    if (config.data.labels.length >= 50) {
+                        config.data.labels.shift();
+                        config.data.datasets[0].data.shift();
+                        config.data.datasets[1].data.shift();
+                    }
+
+                    config.data.labels.push(entry.timestamp);
+                    config.data.datasets[0].data.push(entry.sensor1);
+                    config.data.datasets[1].data.push(entry.sensor2);
+                });
+                lineChart.update();
+            });
+        }
+
         // Function to fetch new data and update the chart
         function fetchDataAndUpdateChart() {
             $.get("/chart-data", function (data) {
-                // Assuming data is an array of {timestamp, sensor1, sensor2}
                 const latestData = data[data.length - 1];
 
-                if (config.data.labels.length === 30) {
+                // Keep only the latest 50 points in the chart
+                if (config.data.labels.length === 50) {
                     config.data.labels.shift();
                     config.data.datasets[0].data.shift();
                     config.data.datasets[1].data.shift();
@@ -112,7 +132,10 @@
             });
         }
 
-        // Set an interval to refresh the chart every 1 seconds
+        // Fetch the initial 50 data points when the page loads
+        fetchInitialData();
+
+        // Set an interval to refresh the chart every 5 seconds
         setInterval(fetchDataAndUpdateChart, 1000); // Adjust the interval as needed
     });
 </script>

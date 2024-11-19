@@ -47,24 +47,22 @@ def post_data():
     return jsonify({"message": "Data saved successfully!"}), 200
 
 # GET endpoint to fetch chart data (all historical data)
-@app.route('/chart-data', methods=["GET"])
+@app.route('/chart-data')
 def chart_data():
-    # Fetch all data from the database
-    all_data = DataPoint.query.order_by(DataPoint.id).all()  # Get all data from the database
+    # Fetch the latest 50 data points from the database
+    data = DataPoint.query.order_by(DataPoint.id.desc()).limit(50).all()
+    # Reverse the data to get it in ascending order (oldest first)
+    data = data[::-1]
     
-    # Convert the data into a list of dictionaries
-    data_list = [
-        {
-            "id": data.id,
-            "timestamp": data.timestamp.isoformat(),
-            "sensor1": data.sensor1,
-            "sensor2": data.sensor2
-        }
-        for data in all_data
-    ]
+    # Convert to a list of dictionaries
+    data_dict = [{
+        "timestamp": data_point.timestamp.isoformat(),
+        "sensor1": data_point.sensor1,
+        "sensor2": data_point.sensor2
+    } for data_point in data]
     
-    # Return the data as a JSON response
-    return jsonify(data_list)
+    return jsonify(data_dict)
+
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
